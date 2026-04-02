@@ -1,0 +1,13 @@
+langchain
+langchain-core
+langchain-community
+langchain-groq
+langchain-huggingface
+langchain-text-splitters
+langgraph
+sentence-transformers
+pypdf
+psycopg2-binary
+pgvector
+pydantic-settings
+python-dotenv
