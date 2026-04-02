@@ -11,8 +11,9 @@ RUN pip install --no-cache-dir -r shared-reqs.txt
 COPY RAG/apps/fastapi/requirements.txt ./app-reqs.txt
 RUN pip install --no-cache-dir -r app-reqs.txt
 
-# 3. Copy the entire RAG monorepo
-COPY RAG/ ./RAG/
+# 3. Securely copy ONLY the backend Monorepo logic (Ignoring frontend UI & Node Modules)
+COPY RAG/shared/ ./RAG/shared/
+COPY RAG/apps/fastapi/ ./RAG/apps/fastapi/
 
 EXPOSE 8001
 
