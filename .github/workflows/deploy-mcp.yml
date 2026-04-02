@@ -1,0 +1,39 @@
+name: Build and Push MCP Server to Amazon ECR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'RAG/apps/mcp/**'
+      - 'RAG/shared/**'
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: rag-mcp
+  ECR_REGISTRY: 355421126675.dkr.ecr.ap-south-1.amazonaws.com
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push Docker image to Amazon ECR
+        run: |
+          # Build the Docker image from the root context to capture RAG/shared/
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest -f RAG/apps/mcp/Dockerfile .
+          # Push the built image to ECR
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
