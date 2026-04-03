@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     # ── MCP ───────────────────────────────────────────────────────────────────
     mcp_host: str = "0.0.0.0"
     mcp_port: int = 8000
-    mcp_server_url: str = "http://localhost:8000/sse"
+    mcp_server_url: str = "http://localhost:8000"
 
     @property
     def database_url(self) -> str:

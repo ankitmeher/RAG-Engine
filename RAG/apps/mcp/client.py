@@ -27,6 +27,7 @@ class RAGMCPClient:
         self._client: Optional[Client] = None
 
     async def __aenter__(self) -> "RAGMCPClient":
+        # FastMCP Client handles both SSE and HTTP automatically based on the URL
         self._client = Client(self._url)
         await self._client.__aenter__()
         return self

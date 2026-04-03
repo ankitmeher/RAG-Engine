@@ -1,22 +1,20 @@
-FROM python:3.11-slim
+# 1. Use the official AWS Lambda Python 3.11 base image
+FROM public.ecr.aws/lambda/python:3.11
 
-WORKDIR /app
-# Install system dependencies
-RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+# 2. Install necessary system dependencies (gcc and postgres-devel for building psycopg2)
+RUN yum install -y gcc postgresql-devel && yum clean all
 
-# 1. Install shared requirements
-COPY RAG/shared/requirements.txt ./shared-reqs.txt
-RUN pip install --no-cache-dir -r shared-reqs.txt
+# 3. Install shared requirements
+COPY RAG/shared/requirements.txt ${LAMBDA_TASK_ROOT}/shared-reqs.txt
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/shared-reqs.txt
 
-# 2. Install MCP specific requirements
-COPY RAG/apps/mcp/requirements.txt ./app-reqs.txt
-RUN pip install --no-cache-dir -r app-reqs.txt
+# 4. Install MCP specific requirements (Includes Mangum now!)
+COPY RAG/apps/mcp/requirements.txt ${LAMBDA_TASK_ROOT}/app-reqs.txt
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/app-reqs.txt
 
-# 3. Securely copy ONLY the backend Monorepo logic (Ignoring frontend UI & Node Modules)
-COPY RAG/shared/ ./RAG/shared/
-COPY RAG/apps/mcp/ ./RAG/apps/mcp/
+# 5. Copy the RAG folder into the official Lambda task root
+COPY RAG/ ${LAMBDA_TASK_ROOT}/RAG/
 
-# Expose SSE stream port
-EXPOSE 8000
-
-CMD ["python", "-m", "RAG.apps.mcp.server"]
+# 6. Set the CMD to point to the Mangum handler inside your Python file
+# Format: [filename].[function_name]
+CMD ["RAG.apps.mcp.server.handler"]

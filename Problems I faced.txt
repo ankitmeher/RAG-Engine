@@ -1,0 +1,10 @@
+The Base Image is not compatible for AWS LAMBDA the code for Dockerfile is different for AWS Lambda and for local machine.
+
+For AWS Lambda:
+FROM public.ecr.aws/lambda/python:3.11
+
+For Local Machine:
+FROM python:3.11-slim
+
+The Waiter (Lambda) is only allowed to stay at your table for a few seconds.
+SSE Streaming is like the waiter bringing you one spoonful of soup every 5 seconds and staying at your table until the whole bowl is finished.
