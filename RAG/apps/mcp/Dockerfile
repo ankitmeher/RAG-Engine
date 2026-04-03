@@ -1,27 +1,23 @@
-# --- STAGE 1: BUILDER ---
-# We use the SAME AWS image as the builder! 
-FROM public.ecr.aws/lambda/python:3.11 AS builder
-
-# Install compilers available on Amazon Linux
-RUN yum install -y gcc gcc-c++ postgresql-devel python3-devel && yum clean all
-
-WORKDIR /build
-COPY RAG/shared/requirements.txt ./shared-requirements.txt
-COPY RAG/apps/mcp/requirements.txt ./mcp-requirements.txt
-
-# Install into a local folder
-# This will build Numpy FOR the Amazon Linux environment
-RUN pip install --no-cache-dir --target=/build/deps \
-    -r shared-requirements.txt \
-    -r mcp-requirements.txt
-
-# --- STAGE 2: FINAL ---
+# Use the official AWS Lambda Python 3.11 base image (Amazon Linux 2)
 FROM public.ecr.aws/lambda/python:3.11
 
-RUN yum install -y postgresql-libs && yum clean all
+# AWS Lambda Python 3.11 uses Amazon Linux 2 (GLIBC 2.26).
+# Numpy 2.0+ dropped pre-compiled wheels for this older Linux.
+# By installing numpy<2 first, we force pip to use a pre-compiled binary,
+# saving us from compiler errors and making the build 10x faster!
+RUN pip install "numpy<2" --no-cache-dir
 
-# Copy ONLY the pre-built dependencies from the Amazon-built stage
-COPY --from=builder /build/deps ${LAMBDA_TASK_ROOT}/
+# Install shared requirements
+COPY RAG/shared/requirements.txt ${LAMBDA_TASK_ROOT}/shared-requirements.txt
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/shared-requirements.txt
+
+# Install MCP requirements
+COPY RAG/apps/mcp/requirements.txt ${LAMBDA_TASK_ROOT}/mcp-requirements.txt
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/mcp-requirements.txt
+
+# Copy main code
 COPY RAG/ ${LAMBDA_TASK_ROOT}/RAG/
 
+# Set the Handler
 CMD ["RAG.apps.mcp.server.handler"]
+
