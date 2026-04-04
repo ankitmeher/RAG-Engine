@@ -1,0 +1,27 @@
+{
+  "tools": [
+    {
+      "name": "search_vector_store",
+      "description": "Searches the PDF document for relevant information. Use this for any factual questions about the uploaded files.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The search query to look up in the document."
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "cleanup_session_data",
+      "description": "Deletes all stored chunks and session data for the current user. Use this only if the user explicitly asks to 'reset', 'clear', or 'delete' their data.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  ]
+}

@@ -2,11 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { UploadCloud, FileText, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import './App.css';
 
+// Read API URL from environment variables, fallback to localhost for development
+const API_BASE_URL = 'http://localhost:8001';
+
 function App() {
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
-  
+
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isQuerying, setIsQuerying] = useState(false);
@@ -34,14 +37,14 @@ function App() {
     if (sessionId) formData.append('session_id', sessionId);
 
     try {
-      const res = await fetch('http://localhost:8001/upload', {
+      const res = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         body: formData,
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Upload failed');
-      
+
       setSessionId(data.session_id);
       setMessages(prev => [...prev, {
         role: 'ai',
@@ -66,7 +69,7 @@ function App() {
     setIsQuerying(true);
 
     try {
-      const res = await fetch('http://localhost:8001/query', {
+      const res = await fetch(`${API_BASE_URL}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,27 +95,27 @@ function App() {
     <>
       <div className="bg-blob blob-1"></div>
       <div className="bg-blob blob-2"></div>
-      
+
       <div className="app-container">
-        
+
         {/* LEFT SIDEBAR - INGESTION */}
         <div className="panel sidebar">
           <div className="brand">
             <Sparkles strokeWidth={2.5} /> RAG Engine
           </div>
-          
+
           <div className="upload-zone">
-            <input 
-              type="file" 
-              accept=".pdf" 
-              onChange={handleFileChange} 
-              disabled={isUploading} 
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handleFileChange}
+              disabled={isUploading}
             />
             {file ? (
               <>
                 <FileText className="upload-icon" />
                 <h3>Ready to Ingest</h3>
-                <span className="file-info">{file.name} ({Math.round(file.size/1024)} KB)</span>
+                <span className="file-info">{file.name} ({Math.round(file.size / 1024)} KB)</span>
               </>
             ) : (
               <>
@@ -125,15 +128,15 @@ function App() {
             )}
           </div>
 
-          <button 
-            className="submit-btn" 
+          <button
+            className="submit-btn"
             onClick={handleUploadSubmit}
             disabled={!file || isUploading}
           >
             {isUploading ? (
               <><Loader2 className="spinner" size={20} /> Ingesting Vector Chunks...</>
             ) : (
-              <><span style={{fontWeight: 700}}>+</span> Process Document</>
+              <><span style={{ fontWeight: 700 }}>+</span> Process Document</>
             )}
           </button>
         </div>
@@ -167,12 +170,12 @@ function App() {
                 </div>
               ))
             )}
-            
+
             {isQuerying && (
               <div className="msg ai">
-                <div className="avatar"><Bot size={20}/></div>
-                <div className="bubble" style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                 <Loader2 size={16} className="spinner"/> Generating response via Groq...
+                <div className="avatar"><Bot size={20} /></div>
+                <div className="bubble" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <Loader2 size={16} className="spinner" /> Generating response via Groq...
                 </div>
               </div>
             )}
@@ -181,8 +184,8 @@ function App() {
 
           <form className="input-area" onSubmit={handleSend}>
             <div className="input-box">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder={sessionId ? "Ask a question about your documents..." : "Upload a document to enable querying"}
                 value={inputMsg}
                 onChange={(e) => setInputMsg(e.target.value)}

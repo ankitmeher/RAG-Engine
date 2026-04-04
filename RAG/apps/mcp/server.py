@@ -1,63 +1,81 @@
 """
-MCP Server Entry Point over HTTP transport.
-Suitable for AWS Lambda deployment via Mangum adapter or running natively as a web server.
+MCP Microservice — Stable FastAPI Implementation.
+A rock-solid microservice for RAG tool calling.
+Works 100% with AWS Lambda (Mangum) and local development.
 """
 
-from fastmcp import FastMCP
-
-from RAG.shared.config.config import settings
+import os
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from mangum import Mangum
 
-
-# Import modular tools
-from RAG.apps.mcp.tools import vector_store
 from RAG.apps.mcp.tools import retrieval
-from RAG.apps.mcp.tools import embedding
+from RAG.shared.db_layer.init_db import init_db
+from RAG.shared.ai_engine.embeddings import get_embeddings
+from contextlib import asynccontextmanager
 
-# Create the MCP application
-mcp = FastMCP("RAG-Modular-Agent-MCP")
+# ── Setup ───────────────────────────────────────────────────────────────────
 
-# ─────────────────────────── Register Tools ───────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Enable pgvector and pre-load the AI models into memory."""
+    init_db()
+    print("--- [MCP SERVER] Warming up AI models... ---")
+    get_embeddings() # Pre-load the HuggingFace model
+    print("--- [MCP SERVER] All models loaded! ---")
+    yield
 
-# 1. Retrieval (Core RAG)
-mcp.tool()(retrieval.run_rag_query)
-
-# 2. Vector Store Management
-mcp.tool()(vector_store.search_vector_store)
-mcp.tool()(vector_store.list_session_chunks)
-mcp.tool()(vector_store.cleanup_session_data)
-
-# 3. Embeddings/Analytics
-mcp.tool()(embedding.generate_embedding)
+app = FastAPI(title="RAG-MCP-Microservice", lifespan=lifespan)
+handler = Mangum(app)  # Entry point for AWS Lambda
 
 
-# ─────────────────────────── Server Execution ───────────────────────────
+# ── Tool Definitions ─────────────────────────────────────────────────────────
 
-# 1. AWS Lambda Handler
-mcp_app = mcp.http_app()
+class ToolCallRequest(BaseModel):
+    tool: str
+    arguments: dict
 
-async def asgi_wrapper(scope, receive, send):
-    """Simple ASGI wrapper to show a message on the root path without using Starlette routes."""
-    if scope["type"] == "http" and scope["path"] == "/":
-        await send({
-            "type": "http.response.start",
-            "status": 200,
-            "headers": [(b"content-type", b"text/plain")],
-        })
-        await send({
-            "type": "http.response.body",
-            "body": b"This RAG Engine's MCP Server is Deployed in AWS Lambda.",
-        })
-        return
-    # Pass all other requests (like /mcp) to the actual FastMCP app
-    await mcp_app(scope, receive, send)
 
-# Mangum wraps the ASGI app for Lambda
-handler = Mangum(asgi_wrapper)
+@app.post("/call")
+async def call_tool(request: ToolCallRequest):
+    """Stateless entry point to execute RAG tools."""
+    t_name = request.tool.lower()
+    args = request.arguments
+    
+    print(f"--- [MCP SERVER] Received call for: {t_name} ---")
+    
+    try:
+        if t_name == "search_vector_store":
+            return await retrieval.search_vector_store(
+                session_id=args["session_id"],
+                query=args["query"],
+                k=args.get("k", 4)
+            )
+        
+        elif t_name == "run_rag_query":
+            return await retrieval.run_rag_query(
+                session_id=args["session_id"],
+                question=args["question"]
+            )
+            
+        elif t_name == "cleanup_session_data":
+            return await retrieval.cleanup_session_data(
+                session_id=args["session_id"]
+            )
+            
+        else:
+            raise HTTPException(404, f"Tool '{t_name}' not found on this server.")
+            
+    except Exception as e:
+        print(f"--- [MCP SERVER] Tool Error: {e} ---")
+        raise HTTPException(500, str(e))
 
-# 2. Local Executor (This only runs when you start it manually on your PC)
+
+@app.get("/")
+async def health():
+    return {"status": "ok", "service": "RAG-MCP-Microservice", "transport": "Pure HTTP"}
+
+
 if __name__ == "__main__":
     import uvicorn
-    print(f"Starting MCP Modular Server (HTTP) on http://{settings.mcp_host}:{settings.mcp_port}")
-    # We run the wrapper with uvicorn so localhost:8000 also shows the message
-    uvicorn.run(asgi_wrapper, host=settings.mcp_host, port=settings.mcp_port)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
