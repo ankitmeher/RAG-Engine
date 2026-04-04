@@ -1,113 +1,92 @@
 # 🧬 Agentic RAG Microservice Engine
-> **Distributed AI Reasoning & Vector Store Orchestration**
+> **Distributed AI Reasoning & Cloud-Scale Vector Intelligence**
 
-[![Agentic Architecture](https://img.shields.io/badge/Architecture-Agentic%20RAG-blueviolet)](#)
-[![Tech Stack](https://img.shields.io/badge/Tech-LangGraph%20|%20FastAPI%20|%20PostgreSQL-blue)](#)
-[![Cloud Ready](https://img.shields.io/badge/Deploy-AWS%20Lambda%20|%20Mangum-orange)](#)
-
-## 🎯 Overview
-Most RAG (Retrieval-Augmented Generation) systems are **static**—they follow a "one-shot" retrieval-to-answer pipeline. This project implements a **Distributed Agentic RAG Engine**, where the AI uses a **LangGraph reasoning loop** to dynamically decide whether it needs external knowledge, which specific tools to call, and how to verify the retrieved data before delivering a final answer.
-
-The project is built on a **Decoupled Microservice Architecture**, separating the "Brain" (Reasoning Node) from the "Tools" (MCP Tool Node), ensuring absolute scalability and production-grade stability.
+![UI Preview](./screenshots/UI%20of%20the%20RAG%20Engine.png)
 
 ---
 
-## 🏗️ High-Level Architecture
+## 🏗️ The "How It Works" Flow (Simplified)
+Here’s the journey of a question in the **Agentic RAG Engine**:
 
 ```mermaid
-graph TD
-    User([User Prompt]) --> Frontend[React Frontend]
-    Frontend --> Brain[FastAPI Reasoning Engine]
+flowchart TD
+    User([👤 <b>You</b>]) -- "Ask a Question" --> UI[💻 <b>React UI</b>]
+    UI -- "FastAPI Trigger" --> Brain[🧠 <b>AI Brain (LangGraph)</b>]
     
-    subgraph "Agentic Reasoning Loop (LangGraph)"
-        Brain --> AgentNode{Agent Node}
-        AgentNode -- "Needs Info?" --> ToolNode[Tool Execution Node]
-        ToolNode --> ToolBridge[RAG-MCP Client]
+    subgraph Reasoning ["The Reasoning Loop"]
+        Brain -- "Needs Facts?" --> ToolGate{<b>Decider</b>}
+        ToolGate -- "YES" --> ToolCall[🛠️ <b>MCP Microservice</b>]
+        ToolCall -- "Search Data" --> Database[(🗄️ <b>PGVector Memory</b>)]
+        Database -- "Return Facts" --> ToolCall
+        ToolCall -- "Inject Context" --> Brain
     end
     
-    subgraph "MCP Microservice (Stateless)"
-        ToolBridge -- "HTTP POST /call" --> MCPServer[FastAPI Tool Server]
-        MCPServer --> Retrieval[Retrieval Tool]
-        MCPServer --> Janitor[Cleanup Tool]
-    end
-    
-    Retrieval --> PGVector[(PostgreSQL + PGVector)]
-    Janitor --> PGVector
-    
-    MCPServer -- "JSON Response" --> ToolNode
-    ToolNode -- "Injected Context" --> AgentNode
-    AgentNode -- "Final Answer" --> Brain
-    Brain --> Frontend
+    Brain -- "Final Answer" --> UI
+    UI -- "Show Response" --> User
 ```
 
 ---
 
-## ⛓️ Key Features
+## 🧪 Experience the Power (Visual Showcase)
+### **1. Intelligent Reasoning & Ingestion**
+The AI doesn't just search—it understands. Here is the **Agentic Loop** in action, extracting contact details from a resume while keeping the conversation concise and professional.
+![AI Output](./screenshots/Resume%20Uploaded%20and%20tested.png)
 
-### 1. **Autonomous Reasoning (LangGraph)**
-The AI does not follow a fixed path. It observes the user's question, inspects its available "Manifest" of tools, and constructs its own execution plan. If its first search is insufficient, it re-queries with more specific parameters until the fact is found.
+---
 
-### 2. **Decoupled Microservice Toolset (MCP)**
-Unlike standard AI apps that bundle tools locally, this engine treats tools as **Distributed Microservices**. The "Brain" communicates with an **MCP (Model Context Protocol)** server over HTTP, meaning tools can be scaled or deployed separately on **AWS Lambda**.
+### **2. Cloud Infrastructure & Distributed Deployment**
+This architecture is born in the cloud. We utilize **AWS ECR** for registry management, **AWS ECS/Lambda** for compute orchestration, and **AWS ELB** for traffic management.
 
-### 3. **Stateless Tool Calling Protocol**
-Implemented a custom manual string-parsing bridge (`CALL: tool_name(...)`) that bypasses unreliable native LLM tool-calling layers, providing **100% stable execution** on smaller, high-speed models like Llama-3.1-8b.
+| AWS Infrastructure | Operational Context |
+| :--- | :--- |
+| ![ECR](./screenshots/Docker%20Image%20stored%20in%20ECR.png) | **AWS ECR:** Securely hosting immutable Docker images for the RAG engine. |
+| ![ECS](./screenshots/ECS%20Services.png) | **AWS ECS:** Orchestrating high-availability clusters for the AI Reasoning core. |
+| ![ALB](./screenshots/Target%20Group%20and%20ALB.png) | **AWS Load Balancer (ALB):** Managing traffic routing and high-performance throughput. |
+| ![Lambda](./screenshots/MCP%20Server%20Deployed%20in%20AWS%20Lambda.png) | **AWS Lambda:** Serverless microservice tools for infinite scaling on demand. |
 
-### 4. **Self-Cleaning Data Pipeline**
-Ingestion pipelines are engineered for clean workspaces. PDFs are processed in a self-cleaning `try...finally` environment: they are stored, vectorized, and then **instantly deleted locally**, leaving no artifacts behind except the high-performance embeddings in **PGVector**.
+---
+
+### **3. Production-Grade Memory (RDS)**
+Instead of ephemeral local files, all embeddings are stored in **Amazon RDS (PostgreSQL)** with **PGVector**, providing the AI with a persistent, industrial-strength brain.
+![RDS](./screenshots/RDS%20Database%20PostgreSQL.png)
+
+---
+
+## ⛓️ Key Architectural Strengths
+
+### 🧠 **Autonomous Decision Making (LangGraph)**
+The AI observes your question, inspects its **Tools Manifesto**, and decides its own execution plan. If its first search is insufficient, it re-queries with more specific parameters—this is the true power of an "Agentic" loop.
+
+### 🛰️ **Decoupled Microservice Tools (MCP)**
+By using the **Model Context Protocol (MCP)** over HTTP, the "Tools" are completely decentralized. They can live independently as Docker containers or Serverless Lambda functions, making the system highly modular and easy to extend.
+
+### 🧹 **Self-Cleaning Data Pipeline**
+Ingestion happens in a secure environment. PDFs are vectorized and the local files are **instantly deleted** after ingestion, ensuring data security and a zero-waste local workspace.
 
 ---
 
 ## 🛠️ Tech Stack
-- **AI/LLM:** LangGraph, LangChain, Groq (Llama-3.1-8b)
+- **AI/LLM:** LangGraph, Groq (Llama-3.1-8b)
 - **Backend:** FastAPI (Microservices), Python 3.11
-- **Database:** PostgreSQL with **PGVector** (Vector Search)
-- **Frontend:** React (Vite), Tailwind CSS
-- **Embeddings:** HuggingFace (Sentence-Transformers)
-- **Deployment:** Docker, Mangum (AWS Lambda ASGI Wrapper)
+- **Database:** PostgreSQL **PGVector** (Vector Search)
+- **Web:** React, Tailwind CSS
+- **Cloud/Ops:** Docker, AWS (ECR, ECS, ELB, Lambda/Mangum, RDS)
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Setup
 
-### 1. **Setup Environment**
 ```bash
-# Clone the repository
-git clone https://github.com/ankitmeher/RAG-Engine.git
-cd RAG-Engine
-
-# Install core dependencies
-pip install -r RAG/shared/requirements.txt
-```
-
-### 2. **Start the MCP Tool Microservice**
-```bash
+# 1. Start the Tool Microservice
 python -m RAG.apps.mcp.server
-```
-*Wait for: `--- [MCP SERVER] All models loaded! ---`*
 
-### 3. **Start the Brain (FastAPI Engine)**
-```bash
+# 2. Start the AI Engine
 uvicorn RAG.apps.fastapi.main:app --reload --port 8001
-```
 
-### 4. **Run the UI**
-```bash
-cd RAG/apps/frontend
-npm install
-npm run dev
+# 3. Launch UI
+cd RAG/apps/frontend && npm run dev
 ```
 
 ---
 
-## 📈 Roadmap & Enhancements
-- [x] **Agentic Reasoning Loop**
-- [x] **Stateless Microservice Bridge**
-- [x] **PGVector Integration**
-- [ ] **Multi-Document Support**
-- [ ] **Web Search Tool Integration**
-- [ ] **Conversational Memory Persistence (Redis)**
-
----
-
-**Developed for Distributed AI Engineering Excellence.** 🏁🏆🚩
+**Engineered for Distributed AI Excellence.** 🏁🏆🚩
