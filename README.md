@@ -1,7 +1,7 @@
 # 🧬 Agentic RAG Microservice Engine
 > **Distributed AI Reasoning & Cloud-Scale Vector Intelligence**
 
-![UI Preview](./Screenshots/UI%20of%20the%20RAG%20Engine.png)
+![UI Preview](./Screenshots/ui_preview.png)
 
 ---
 
@@ -30,7 +30,7 @@ flowchart TD
 ## 🧪 Experience the Power (Visual Showcase)
 ### **1. Intelligent Reasoning & Ingestion**
 The AI doesn't just search—it understands. Here is the **Agentic Loop** in action, extracting contact details from a resume while keeping the conversation concise and professional.
-![AI Output](./Screenshots/Resume%20Uploaded%20and%20tested.png)
+![AI Output](./Screenshots/resume_tested.png)
 
 ---
 
@@ -39,16 +39,16 @@ This architecture is born in the cloud. We utilize **AWS ECR** for registry mana
 
 | AWS Infrastructure | Operational Context |
 | :--- | :--- |
-| ![ECR](./Screenshots/Docker%20Image%20stored%20in%20ECR.png) | **AWS ECR:** Securely hosting immutable Docker images for the RAG engine. |
-| ![ECS](./Screenshots/ECS%20Services.png) | **AWS ECS:** Orchestrating high-availability clusters for the AI Reasoning core. |
-| ![ALB](./Screenshots/Target%20Group%20and%20ALB.png) | **AWS Load Balancer (ALB):** Managing traffic routing and high-performance throughput. |
-| ![Lambda](./Screenshots/MCP%20Server%20Deployed%20in%20AWS%20Lambda.png) | **AWS Lambda:** Serverless microservice tools for infinite scaling on demand. |
+| ![ECR](./Screenshots/docker_ecr.png) | **AWS ECR:** Securely hosting immutable Docker images for the RAG engine. |
+| ![ECS](./Screenshots/ecs_services.png) | **AWS ECS:** Orchestrating high-availability clusters for the AI Reasoning core. |
+| ![ALB](./Screenshots/alb_target_group.png) | **AWS Load Balancer (ALB):** Managing traffic routing and high-performance throughput. |
+| ![Lambda](./Screenshots/mcp_lambda.png) | **AWS Lambda:** Serverless microservice tools for infinite scaling on demand. |
 
 ---
 
 ### **3. Production-Grade Memory (RDS)**
 Instead of ephemeral local files, all embeddings are stored in **Amazon RDS (PostgreSQL)** with **PGVector**, providing the AI with a persistent, industrial-strength brain.
-![RDS](./Screenshots/RDS%20Database%20PostgreSQL.png)
+![RDS](./Screenshots/rds_postgres.png)
 
 ---
 
