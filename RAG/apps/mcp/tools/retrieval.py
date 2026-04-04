@@ -27,10 +27,10 @@ async def search_vector_store(session_id: str, query: str, k: int = 4) -> list[s
 
 
 async def cleanup_session_data(session_id: str) -> str:
-    """Delete all session data from the database."""
+    """Wipe all chunks and session records from the database."""
     from RAG.shared.db_layer import queries
     try:
-        queries.delete_session_data(session_id)
-        return f"Successfully cleaned up data for session {session_id}."
+        count = queries.delete_session(session_id)
+        return f"Session {session_id} data cleared. Deleted {count} chunks."
     except Exception as exc:
         return f"Error cleaning up session: {exc}"
