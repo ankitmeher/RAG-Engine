@@ -25,12 +25,26 @@ async def upload_pdf(
     os.makedirs(save_dir, exist_ok=True)
     file_path = os.path.join(save_dir, file.filename)
 
-    with open(file_path, "wb") as buf:
-        shutil.copyfileobj(file.file, buf)
-
     try:
+        with open(file_path, "wb") as buf:
+            shutil.copyfileobj(file.file, buf)
+
+        # Process the PDF into the vector store
         summary = ingest_pdf(file_path=file_path, session_id=session_id)
+        
     except Exception as exc:
         raise HTTPException(500, f"Ingestion failed: {exc}") from exc
+        
+    finally:
+        # CLEANUP: Delete the local file and directory immediately
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                # Remove the session directory if empty
+                if os.path.exists(save_dir) and not os.listdir(save_dir):
+                    os.rmdir(save_dir)
+                print(f"--- [CLEANUP] Deleted local file: {file_path} ---")
+            except Exception as e:
+                print(f"--- [CLEANUP] Warning: Could not delete {file_path}: {e} ---")
 
     return {"session_id": session_id, **summary}
